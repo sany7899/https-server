@@ -245,22 +245,22 @@ async function post(path,body){
   if(CFG.demo)return demoApi(path,body);
   const base=(CFG.api||'').replace(/\/$/,'');
   if(!base&&!/^https?:$/.test(location.protocol)) throw new Error('noapi');
-  const c=new AbortController(),to=setTimeout(()=>c.abort(),10000);
+  const c=new AbortController(),to=setTimeout(()=>c.abort(),60000);
   try{const r=await fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:c.signal});
     return await r.json()}finally{clearTimeout(to)}}
 const api=(key,srv)=>post('/api/verify',{key,server:srv});
-const netMsg=x=>x.message==='noapi'?'Server link set kora nai (CFG.api).':'Server-e connect hocche na. Internet check korun.';
+const netMsg=x=>x.message==='noapi'?'Server link set kora nai (CFG.api).':x.name==='AbortError'?'Server jagte somoy nicchhe. Ektu pore abar chesta korun.':'Server-e connect hocche na. ['+(CFG.api||'link nai')+' | '+x.name+': '+x.message+']';
 const ERR={bad_code:'● Code thik na',invalid:'● INVALID KEY',expired:'● Key-er meyad shesh',wrong_server:'● Ei key ei server-er jonno na',too_many:'● Onek bhul hoyeche, kichhukkhon pore try korun'};
 async function verify(btn){
   const e=$('key'),k=e.value.trim().toUpperCase();
   if(!k){toast('Licence key din.');return}
-  btn.disabled=true;btn.textContent='CHECKING...';
+  btn.disabled=true;btn.textContent='CHECKING...';const w=setTimeout(()=>toast('Server jagche, 1 minute porjonto lagte pare...'),5000);
   try{
     const r=await api(k,server);
     if(!r.ok){if(r.error==='invalid'){e.classList.remove('bad');void e.offsetWidth;e.classList.add('bad')}toast(ERR[r.error]||'● INVALID KEY');return}
     store.set({key:k,server,exp:r.expires});toast('● KEY VERIFIED');setTimeout(openDash,500)
   }catch(x){toast(netMsg(x))}
-  finally{btn.disabled=false;btn.textContent='Verify key'}}
+  finally{clearTimeout(w);btn.disabled=false;btn.textContent='Verify key'}}
 let code='',connected=false,sites=[];
 const esc=v=>v.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function drawCode(){
